@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="HeatSense AI is a climate intelligence and heatwave early warning platform that combines live weather data, heatwave forecasting, and advisory generation." />
+  <meta name="theme-color" content="#06101f" />
+  <title>HeatSense AI | Climate Intelligence & Heatwave Early Warning Platform</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topnav">
+      <div class="brand-group">
+        <div class="brand-mark" aria-hidden="true">☀️</div>
+        <div class="brand-copy">
+          <strong>HeatSense AI</strong>
+          <span>Climate Intelligence & Heatwave Early Warning Platform</span>
+        </div>
+      </div>
+
+      <button class="nav-toggle" id="navToggle" aria-expanded="false" aria-label="Toggle navigation menu">
+        <span></span>
+      </button>
+
+      <nav class="site-nav" id="siteNav">
+        <a href="#dashboard">Dashboard</a>
+        <a href="#forecast">Forecast</a>
+        <a href="#live-stations">Live Stations</a>
+        <a href="#risk-map">Risk Map</a>
+        <a href="#alerts">Advisories</a>
+        <a href="#analytics">Analytics</a>
+        <a href="#admin-users">Admin</a>
+      </nav>
+
+      <div class="nav-actions">
+        <div class="status-pill"><span class="status-dot"></span>System Online</div>
+        <button class="icon-btn" aria-label="View notifications">🔔</button>
+        <div class="profile-badge" aria-label="User profile">
+          <span>SM</span>
+        </div>
+      </div>
+    </header>
+
+    <main>
+      <section class="hero-panel" id="dashboard">
+        <div class="hero-copy">
+          <span class="eyebrow">HeatSense AI</span>
+          <h1>Heatwaves are becoming more intense. Stay ahead of extreme heat.</h1>
+          <p>HeatSense AI combines weather data, IoT sensors, and predictive analytics to identify heatwave risks, issue early warnings, and support fast action.</p>
+          <div class="hero-actions">
+            <a class="button button-primary" href="#forecast">Explore Forecast</a>
+            <a class="button button-secondary" href="#live-stations">View Live Data</a>
+          </div>
+        </div>
+
+        <div class="hero-visual" aria-hidden="true">
+          <div class="map-shell">
+            <div class="map-title">India Heatwave Zones</div>
+            <div class="india-map">
+              <div class="region region-extreme" title="Central Plains — Extreme Alert"></div>
+              <div class="region region-severe" title="Deccan Belt — Severe Heat"></div>
+              <div class="region region-mild" title="Coastal Corridor — Mild Heat"></div>
+              <div class="region region-normal" title="Northern Highlands — Normal"></div>
+              <div class="map-node node-1" title="Mumbai Corridor 44.2°C"></div>
+              <div class="map-node node-2" title="Pune Hub 45.1°C"></div>
+              <div class="map-node node-3" title="Delhi Sector 46.3°C"></div>
+              <div class="map-node node-4" title="Ahmedabad Sector 47.0°C"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="snapshot-panel section-snap" aria-label="Live climate snapshot">
+        <article class="snapshot-card" data-target="44.8" data-unit="°C" data-change="+1.5°C">
+          <div class="card-icon">🌡️</div>
+          <div>
+            <h3>Current Temperature</h3>
+            <div class="metric-line"><strong>0</strong><span>°C</span></div>
+          </div>
+          <p>Up 1.5°C since yesterday.</p>
+        </article>
+        <article class="snapshot-card" data-target="48.2" data-unit="°C" data-change="+2.2°C">
+          <div class="card-icon">🔥</div>
+          <div>
+            <h3>Heat Index</h3>
+            <div class="metric-line"><strong>0</strong><span>°C</span></div>
+          </div>
+          <p>Feels hotter across urban zones.</p>
+        </article>
+        <article class="snapshot-card" data-target="5" data-unit="zones" data-change="+1 zone">
+          <div class="card-icon">⚠️</div>
+          <div>
+            <h3>Active Heatwave Zones</h3>
+            <div class="metric-line"><strong>0</strong><span>zones</span></div>
+          </div>
+          <p>5 high-risk heatwave zones are active.</p>
+        </article>
+        <article class="snapshot-card" data-target="12" data-unit="/12" data-change="Stable">
+          <div class="card-icon">📡</div>
+          <div>
+            <h3>Weather Stations Online</h3>
+            <div class="metric-line"><strong>0</strong><span>/12</span></div>
+          </div>
+          <p>Live telemetry from all monitoring nodes.</p>
+        </article>
+        <article class="snapshot-card" data-target="3.4" data-unit="°C" data-change="+0.8°C">
+          <div class="card-icon">📈</div>
+          <div>
+            <h3>Temperature Anomaly</h3>
+            <div class="metric-line"><strong>0</strong><span>°C</span></div>
+          </div>
+          <p>Above seasonal norms.</p>
+        </article>
+      </section>
+
+      <section class="risk-section section-block" id="risk-map">
+        <div class="section-header">
+          <p class="eyebrow">National Heatwave Risk</p>
+          <h2>High-resolution risk mapping for informed action.</h2>
+        </div>
+
+        <div class="risk-grid">
+          <div class="risk-map-card">
+            <div class="live-map-toolbar">
+              <div>
+                <strong>Live surface temperature</strong>
+                <span id="liveMapStatus">Connecting to weather feed...</span>
+              </div>
+              <span class="live-map-time" id="liveMapUpdated">Waiting for update</span>
+            </div>
+            <div class="map-legend">
+              <span class="legend-item legend-extreme">&gt; 42°C</span>
+              <span class="legend-item legend-severe">36–42°C</span>
+              <span class="legend-item legend-mild">28–36°C</span>
+              <span class="legend-item legend-normal">&lt; 28°C</span>
+            </div>
+            <div class="risk-map-visual">
+              <div class="risk-india-map" id="regionMap" aria-label="Live temperature heat map of India"></div>
+            </div>
+          </div>
+
+          <aside class="region-panel" id="selectedRegionPanel">
+            <div class="region-panel-title">
+              <span>Selected Region</span>
+              <strong id="selectedRegionName">Central Plains</strong>
+            </div>
+            <div class="region-details">
+              <div><span>Current Temperature</span><strong id="panelTemp">44.8°C</strong></div>
+              <div><span>Feels Like</span><strong id="panelFeels">48.2°C</strong></div>
+              <div><span>Humidity</span><strong id="panelHumidity">36%</strong></div>
+              <div><span>Risk Level</span><strong id="panelRisk">Extreme Alert</strong></div>
+              <div><span>Temperature Anomaly</span><strong id="panelAnomaly">+4.2°C</strong></div>
+              <div><span>Recommended Action</span><strong id="panelAction">Activate emergency cooling centers and alert vulnerable populations.</strong></div>
+            </div>
+            <button class="button button-primary" id="generateAdvisoryFromMap">Generate Advisory</button>
+          </aside>
+        </div>
+      </section>
+
+      <section class="forecast-section section-block" id="forecast">
+        <div class="section-header">
+          <p class="eyebrow">7-Day Heat Forecast</p>
+          <h2>Forecast trends, heat index, and anomaly signals at a glance.</h2>
+        </div>
+
+        <div class="forecast-grid">
+          <div class="forecast-chart-card">
+            <div class="chart-labels">
+              <span>Daily temperature</span>
+              <span>Heat index</span>
+            </div>
+            <div class="chart-container">
+              <svg viewBox="0 0 820 260" class="forecast-chart" aria-hidden="true">
+                <defs>
+                  <linearGradient id="heatGradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stop-color="#ffb86c" />
+                    <stop offset="100%" stop-color="#ff6f4d" />
+                  </linearGradient>
+                </defs>
+                <path d="M60,220 C120,180 180,160 240,170 C300,140 360,130 420,150 C480,120 540,110 600,130 C660,100 720,95 780,70" fill="none" stroke="#ff8a3d" stroke-width="4" stroke-linecap="round" class="trend-line" />
+                <path d="M60,220 C120,200 180,170 240,180 C300,160 360,150 420,170 C480,145 540,135 600,155 C660,120 720,110 780,90" fill="none" stroke="#4dd1ff" stroke-width="4" stroke-linecap="round" class="trend-line-alt" />
+                <path d="M60,220 L120,200 L180,170 L240,180 L300,160 L360,150 L420,170 L480,145 L540,135 L600,155 L660,120 L720,110 L780,90 L780,240 L60,240 Z" fill="url(#heatGradient)" opacity="0.24" />
+                <circle cx="60" cy="220" r="8" class="chart-dot"><title>MON: 42°C, Severe Heat</title></circle>
+                <circle cx="120" cy="200" r="8" class="chart-dot"><title>TUE: 44°C, Severe Heat</title></circle>
+                <circle cx="180" cy="170" r="8" class="chart-dot"><title>WED: 46°C, Extreme Alert</title></circle>
+                <circle cx="240" cy="180" r="8" class="chart-dot"><title>THU: 45°C, Extreme Alert</title></circle>
+                <circle cx="300" cy="160" r="8" class="chart-dot"><title>FRI: 43°C, Severe Heat</title></circle>
+                <circle cx="360" cy="150" r="8" class="chart-dot"><title>SAT: 41°C, Mild Heat</title></circle>
+                <circle cx="420" cy="170" r="8" class="chart-dot"><title>SUN: 40°C, Mild Heat</title></circle>
+              </svg>
+            </div>
+          </div>
+
+          <div class="forecast-cards" id="forecastCards">
+            <article class="forecast-card severe">
+              <span>MON</span>
+              <strong>42°C</strong>
+              <small>Severe Heat</small>
+            </article>
+            <article class="forecast-card severe">
+              <span>TUE</span>
+              <strong>44°C</strong>
+              <small>Severe Heat</small>
+            </article>
+            <article class="forecast-card extreme">
+              <span>WED</span>
+              <strong>46°C</strong>
+              <small>Extreme Alert</small>
+            </article>
+            <article class="forecast-card extreme">
+              <span>THU</span>
+              <strong>45°C</strong>
+              <small>Extreme Alert</small>
+            </article>
+            <article class="forecast-card severe">
+              <span>FRI</span>
+              <strong>43°C</strong>
+              <small>Severe Heat</small>
+            </article>
+            <article class="forecast-card mild">
+              <span>SAT</span>
+              <strong>41°C</strong>
+              <small>Mild Heat</small>
+            </article>
+            <article class="forecast-card normal">
+              <span>SUN</span>
+              <strong>40°C</strong>
+              <small>Mild Heat</small>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section class="stations-section section-block" id="live-stations">
+        <div class="section-header">
+          <p class="eyebrow">Live Stations</p>
+          <h2>IoT weather stations reporting in real time.</h2>
+        </div>
+
+        <div class="stations-grid">
+          <div class="stations-map" aria-hidden="true">
+            <div class="station-map-shell">
+              <div class="station-map-title">12/12 Stations Online</div>
+              <div class="station-map-visual">
+                <div class="station-dot station-1" title="SVU Campus"></div>
+                <div class="station-dot station-2" title="Shivneri Observatory"></div>
+                <div class="station-dot station-3" title="Pashan Meteorological"></div>
+                <div class="station-dot station-4" title="Agro Research"></div>
+                <div class="station-dot station-5" title="Airport Observatory"></div>
+                <div class="station-dot station-6" title="Indore Canal Node"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="stations-panel">
+            <div class="station-summary">
+              <span>12/12 Stations Online</span>
+              <strong>Live monitoring across the network</strong>
+            </div>
+            <div class="station-list" id="stationList"></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="alerts-section section-block" id="alerts">
+        <div class="section-header">
+          <p class="eyebrow">Heat Risk Alerts</p>
+          <h2>Current warnings and advisory status.</h2>
+        </div>
+
+        <div class="alert-filters" role="tablist" aria-label="Alert filters">
+          <button class="filter-pill active" data-filter="all">All</button>
+          <button class="filter-pill" data-filter="Extreme Alert">Extreme</button>
+          <button class="filter-pill" data-filter="Severe Heat">Severe</button>
+          <button class="filter-pill" data-filter="Mild Heat">Moderate</button>
+          <button class="filter-pill" data-filter="Resolved">Resolved</button>
+        </div>
+
+        <div class="alert-list" id="alertList"></div>
+      </section>
+
+      <section class="advisory-section section-block" id="advisory">
+        <div class="section-header">
+          <p class="eyebrow">AI Advisory Generator</p>
+          <h2>Generate stakeholder-specific heatwave guidance.</h2>
+        </div>
+
+        <div class="advisory-grid">
+          <form class="advisory-form" id="advisoryForm">
+            <label>
+              Stakeholder
+              <select id="stakeholderSelect">
+                <option>Farmers</option>
+                <option>Disaster Management</option>
+                <option>Public Health Agencies</option>
+                <option>Municipal Authorities</option>
+                <option>General Public</option>
+              </select>
+            </label>
+            <label>
+              Region
+              <select id="regionSelect">
+                <option>Mumbai</option>
+                <option>Pune</option>
+                <option>Delhi</option>
+                <option>Ahmedabad</option>
+                <option>Nagpur</option>
+                <option>Other</option>
+              </select>
+            </label>
+            <label>
+              Risk level
+              <select id="riskSelect">
+                <option>Extreme Alert</option>
+                <option>Severe Heat</option>
+                <option>Mild Heat</option>
+              </select>
+            </label>
+            <button type="button" class="button button-primary" id="generateAdvisory">Generate AI Advisory</button>
+          </form>
+
+          <div class="advisory-result" id="advisoryResult">
+            <div class="result-header">
+              <span>Generated advisory</span>
+              <strong>Ready to generate a tailored summary.</strong>
+            </div>
+            <div class="result-body" id="advisoryBody">
+              <p>Select the audience, region, and risk level, then generate an advisory to preview situation summary, actions, and precautions.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="analytics-section section-block" id="analytics">
+        <div class="section-header">
+          <p class="eyebrow">Analytics</p>
+          <h2>Performance insights and climate trend analysis.</h2>
+        </div>
+
+        <div class="analytics-grid">
+          <article class="analytics-card">
+            <span>Temperature Anomaly</span>
+            <strong>+3.4°C</strong>
+            <p>Seasonal deviation across monitored regions.</p>
+          </article>
+          <article class="analytics-card">
+            <span>Heatwave Frequency</span>
+            <strong>28 days</strong>
+            <p>Number of heatwave days recorded this season.</p>
+          </article>
+          <article class="analytics-card">
+            <span>Maximum Temperature</span>
+            <strong>47.8°C</strong>
+            <p>Highest reading captured by the network.</p>
+          </article>
+          <article class="analytics-card">
+            <span>Annual Extreme Heat Days</span>
+            <strong>10</strong>
+            <p>High-risk days predicted by models.</p>
+          </article>
+        </div>
+
+        <div class="analytics-charts">
+          <div class="analytics-chart card-glass">
+            <div class="chart-head"><span>Annual Extreme Heat Days</span></div>
+            <div class="bar-chart" aria-hidden="true">
+              <div class="bar" style="height:36%;"><span>2021</span></div>
+              <div class="bar" style="height:44%;"><span>2022</span></div>
+              <div class="bar" style="height:56%;"><span>2023</span></div>
+              <div class="bar" style="height:68%;"><span>2024</span></div>
+              <div class="bar" style="height:72%;"><span>2025</span></div>
+            </div>
+          </div>
+          <div class="analytics-chart card-glass">
+            <div class="chart-head"><span>Temperature Anomaly Trend</span></div>
+            <div class="trend-graph" aria-hidden="true">
+              <svg viewBox="0 0 480 220">
+                <path d="M20,180 L100,148 L180,134 L260,118 L340,98 L420,74" fill="none" stroke="#4dd1ff" stroke-width="4" stroke-linecap="round" />
+                <circle cx="20" cy="180" r="6" fill="#4dd1ff" />
+                <circle cx="100" cy="148" r="6" fill="#4dd1ff" />
+                <circle cx="180" cy="134" r="6" fill="#4dd1ff" />
+                <circle cx="260" cy="118" r="6" fill="#4dd1ff" />
+                <circle cx="340" cy="98" r="6" fill="#4dd1ff" />
+                <circle cx="420" cy="74" r="6" fill="#4dd1ff" />
+              </svg>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="admin-section section-block" id="admin-users">
+        <div class="section-header admin-heading">
+          <div>
+            <p class="eyebrow">Administration</p>
+            <h2>User management</h2>
+            <p>Monitor access to the climate intelligence platform.</p>
+          </div>
+          <button class="button button-primary" id="refreshUsers">Refresh users</button>
+        </div>
+        <div class="admin-stats">
+          <article class="admin-stat"><span>Total users</span><strong id="totalUsers">-</strong></article>
+          <article class="admin-stat"><span>Active</span><strong id="activeUsers">-</strong></article>
+          <article class="admin-stat"><span>Pending</span><strong id="pendingUsers">-</strong></article>
+          <article class="admin-stat"><span>Inactive</span><strong id="inactiveUsers">-</strong></article>
+        </div>
+        <div class="user-table-wrap">
+          <table class="user-table">
+            <thead><tr><th>User</th><th>Role</th><th>Status</th><th>Joined</th></tr></thead>
+            <tbody id="userTableBody"><tr><td colspan="4">Loading users...</td></tr></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="test-status-section section-block" id="tests">
+        <div class="section-header">
+          <p class="eyebrow">Test Status</p>
+          <h2>Python, Java and API status checks.</h2>
+        </div>
+
+        <div class="test-status-grid">
+          <article class="test-card">
+            <span>Python Tests</span>
+            <strong id="pythonStatus">Pending</strong>
+            <p id="pythonOutput">Run the Python test runner to verify backend logic.</p>
+          </article>
+          <article class="test-card">
+            <span>Java Tests</span>
+            <strong id="javaStatus">Pending</strong>
+            <p id="javaOutput">Run the Java test runner to verify example assertions.</p>
+          </article>
+          <article class="test-card">
+            <span>Backend API</span>
+            <strong id="apiStatus">Checking...</strong>
+            <p id="apiOutput">Backend health and test endpoint status.</p>
+          </article>
+          <article class="test-card">
+            <span>Frontend</span>
+            <strong id="frontendStatus">Ready</strong>
+            <p id="frontendOutput">Static UI loaded and ready to fetch test status.</p>
+          </article>
+        </div>
+
+        <div class="test-status-actions">
+          <button class="button button-primary" id="refreshTestStatus">Refresh status</button>
+          <button class="button button-secondary" id="runTestsNow">Run tests now</button>
+        </div>
+      </section>
+
+      <section class="research-section section-block" id="research">
+        <div class="section-header">
+          <p class="eyebrow">Climate Research</p>
+          <h2>Deep insights from climate trends, historical records, and station data.</h2>
+        </div>
+
+        <div class="research-grid">
+          <article class="research-card">
+            <span>Climate Trends</span>
+            <h3>Long-term warming and emerging heatwave patterns</h3>
+            <p>The latest climate intelligence shows a persistent rise in regional temperatures and a growing footprint of heatwave risk zones.</p>
+          </article>
+          <article class="research-card">
+            <span>Historical Data</span>
+            <h3>Seasonal peaks compared to climatology</h3>
+            <p>By tracking anomalies against historical baselines, HeatSense AI highlights when current conditions exceed expected thresholds.</p>
+          </article>
+          <article class="research-card">
+            <span>Model Insights</span>
+            <h3>Weather station data driving smarter warnings</h3>
+            <p>Live telemetry from IoT stations is combined with predictive models to improve warning lead time and advisory relevance.</p>
+          </article>
+        </div>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <div>
+        <strong>HeatSense AI</strong>
+        <span>Climate Intelligence & Heatwave Early Warning Platform</span>
+      </div>
+      <div>Designed & Developed by <strong>Sammeet Mistry</strong></div>
+    </footer>
+  </div>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+  <script src="https://unpkg.com/leaflet.heat/dist/leaflet-heat.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>

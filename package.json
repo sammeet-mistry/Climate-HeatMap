@@ -1,0 +1,12 @@
+{
+  "name": "heat-sense-ai",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "backend": "python backend/app.py",
+    "frontend": "python -m http.server 4173 --directory frontend",
+    "dev": "node dev.js",
+    "test-python": "python python-tests/TestRunner.py",
+    "test-java": "node java-tests/run-java-tests.js"
+  }
+}
