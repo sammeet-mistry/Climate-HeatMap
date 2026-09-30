@@ -108,6 +108,28 @@ def test_normal_risk_advisory_includes_precautions():
     assert 'Continue routine hydration' in response.get_json()['precautions']
 
 
+def test_advisory_generation_is_logged_and_readable_via_api():
+    client = app_module.app.test_client()
+    client.post('/api/auth/login', json={
+        'email': app_module.AUTH_EMAIL,
+        'password': app_module.AUTH_PASSWORD,
+    })
+
+    client.post('/api/advisory', json={
+        'stakeholder': 'Municipal Authorities',
+        'region': 'Deccan Belt',
+        'risk': 'Severe Heat',
+    })
+
+    response = client.get('/api/activity-log')
+    payload = response.get_json()
+
+    assert response.status_code == 200
+    assert any(entry['action'] == 'advisory_generated' for entry in payload['events'])
+    assert any(entry['region'] == 'Deccan Belt' for entry in payload['events'])
+    assert any(entry['risk'] == 'Severe Heat' for entry in payload['events'])
+
+
 def test_admin_roster_has_requested_admins_and_preserves_placeholders():
     client = app_module.app.test_client()
     client.post('/api/auth/login', json={

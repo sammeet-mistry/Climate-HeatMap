@@ -30,6 +30,15 @@ LIVE_GRID = [
     for lon in (68, 73, 78, 83, 88, 93, 98)
 ]
 live_map_cache = {'timestamp': 0, 'data': None}
+activity_log = []
+
+
+def add_activity(action, **details):
+    activity_log.append({
+        'timestamp': datetime.now(timezone.utc).isoformat().replace('+00:00', 'Z'),
+        'action': action,
+        **details,
+    })
 
 
 @app.before_request
@@ -388,10 +397,24 @@ def generate_advisory():
         'risk_description': descriptions.get(risk, ''),
         'recommended_actions': actions.get(stakeholder, ''),
         'precautions': precautions.get(risk, ''),
-        'target_audience': stakeholder
+        'target_audience': stakeholder,
+        'active': risk in {'Extreme Alert', 'Severe Heat', 'Mild Heat'}
     }
 
+    add_activity(
+        'advisory_generated',
+        stakeholder=stakeholder,
+        region=region,
+        risk=risk,
+        active=advisory['active'],
+        summary=advisory['summary'],
+    )
+
     return jsonify(advisory)
+
+@app.route('/api/activity-log', methods=['GET'])
+def get_activity_log():
+    return jsonify({'events': list(activity_log)})
 
 @app.route('/api/test-status', methods=['GET'])
 def get_test_status():

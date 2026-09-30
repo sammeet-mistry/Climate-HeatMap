@@ -68,6 +68,7 @@ const refreshTestStatusBtn = document.getElementById('refreshTestStatus');
 const runTestsNowBtn = document.getElementById('runTestsNow');
 const userTableBody = document.getElementById('userTableBody');
 const refreshUsersBtn = document.getElementById('refreshUsers');
+const activityLogList = document.getElementById('activityLogList');
 const loginScreen = document.getElementById('loginScreen');
 const loginForm = document.getElementById('loginForm');
 const loginMessage = document.getElementById('loginMessage');
@@ -247,6 +248,39 @@ async function loadAdminUsers() {
   } catch (error) {
     userTableBody.innerHTML = '<tr><td colspan="4">Unable to load users.</td></tr>';
     console.error('Admin users error:', error);
+  }
+}
+
+async function loadActivityLog() {
+  if (!activityLogList) return;
+
+  try {
+    const response = await apiFetch('/activity-log');
+    if (!response.ok) throw new Error('Activity log fetch failed');
+    const data = await response.json();
+    const events = Array.isArray(data.events) ? data.events : [];
+
+    if (!events.length) {
+      activityLogList.innerHTML = '<li>No advisory or system events logged yet.</li>';
+      return;
+    }
+
+    activityLogList.innerHTML = events.slice(-8).reverse().map((event) => {
+      const timestamp = new Date(event.timestamp).toLocaleString();
+      const region = event.region ? ` · ${event.region}` : '';
+      const risk = event.risk ? ` · ${event.risk}` : '';
+      const status = event.active === undefined ? '' : ` · ${event.active ? 'Active advisory' : 'Inactive advisory'}`;
+      return `
+        <li>
+          <span class="activity-time">${timestamp}</span>
+          <strong>${event.action}</strong>
+          <span>${event.summary || event.stakeholder || 'System event'}${region}${risk}${status}</span>
+        </li>
+      `;
+    }).join('');
+  } catch (error) {
+    activityLogList.innerHTML = '<li>Activity log unavailable right now.</li>';
+    console.error('Activity log error:', error);
   }
 }
 
@@ -492,6 +526,7 @@ async function generateAdvisory(stakeholder, region, risk) {
         <p class="advisory-footer">Generated at ${new Date(advisory.timestamp).toLocaleString()}</p>
       </div>
     `;
+    await loadActivityLog();
     showAdvisoryPopup(`Heat advisory generated for ${advisory.region}.`);
   } catch (error) {
     advisoryBody.innerHTML = '<p class="notification-text">Failed to generate advisory. Please try again later.</p>';
@@ -650,6 +685,8 @@ function initDashboard() {
   initAdvisoryGenerator();
   loadData();
   loadLiveMap();
+  loadActivityLog();
+  setInterval(loadActivityLog, 60000);
   setInterval(loadLiveMap, 300000);
   refreshUsersBtn.addEventListener('click', loadAdminUsers);
   loadAdminUsers();
