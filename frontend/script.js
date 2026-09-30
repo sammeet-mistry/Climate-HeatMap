@@ -35,9 +35,16 @@ const filterPills = document.querySelectorAll('.filter-pill');
 const regionMap = document.getElementById('regionMap');
 const liveMapStatus = document.getElementById('liveMapStatus');
 const liveMapUpdated = document.getElementById('liveMapUpdated');
+const caseStudyForm = document.getElementById('caseStudyForm');
+const caseStudyReport = document.getElementById('caseStudyReport');
+const printCaseStudyButton = document.getElementById('printCaseStudy');
 let liveLeafletMap;
 let liveHeatLayer;
-let liveBoundaryLayer;
+let livePointLayer;
+let liveMapFitted = false;
+let latestMapData;
+let latestStations = [];
+let selectedRegion;
 const snapshotCards = document.querySelectorAll('.snapshot-card');
 const pythonStatus = document.getElementById('pythonStatus');
 const javaStatus = document.getElementById('javaStatus');
@@ -51,6 +58,10 @@ const refreshTestStatusBtn = document.getElementById('refreshTestStatus');
 const runTestsNowBtn = document.getElementById('runTestsNow');
 const userTableBody = document.getElementById('userTableBody');
 const refreshUsersBtn = document.getElementById('refreshUsers');
+const loginScreen = document.getElementById('loginScreen');
+const loginForm = document.getElementById('loginForm');
+const loginMessage = document.getElementById('loginMessage');
+const logoutButton = document.getElementById('logoutButton');
 
 const regionData = [
   {
@@ -59,7 +70,7 @@ const regionData = [
     feels_like: 48.2,
     humidity: 36,
     risk: 'Extreme Alert',
-    anomaly: '+4.2°C',
+    anomaly: 'Illustrative scenario',
     action: 'Activate emergency cooling centers and alert vulnerable populations.'
   },
   {
@@ -68,7 +79,7 @@ const regionData = [
     feels_like: 49.0,
     humidity: 34,
     risk: 'Severe Heat',
-    anomaly: '+3.8°C',
+    anomaly: 'Illustrative scenario',
     action: 'Limit outdoor operations and deploy hydration support.'
   },
   {
@@ -77,7 +88,7 @@ const regionData = [
     feels_like: 45.2,
     humidity: 68,
     risk: 'Mild Heat',
-    anomaly: '+2.1°C',
+    anomaly: 'Illustrative scenario',
     action: 'Monitor humidity-driven heat stress and keep cool water available.'
   },
   {
@@ -86,10 +97,11 @@ const regionData = [
     feels_like: 35.2,
     humidity: 45,
     risk: 'Normal',
-    anomaly: '+0.3°C',
+    anomaly: 'Illustrative scenario',
     action: 'No immediate heat advisory; watch for local warming trends.'
   }
 ];
+selectedRegion = regionData[0];
 
 function initNavigation() {
   navToggle.addEventListener('click', () => {
@@ -99,37 +111,8 @@ function initNavigation() {
   });
 }
 
-function animateMetrics() {
-  snapshotCards.forEach((card) => {
-    const target = Number(card.dataset.target.replace(/[^0-9.-]/g, ''));
-    const unit = card.dataset.unit;
-    const change = card.dataset.change;
-    const valueElement = card.querySelector('.metric-line strong');
-    let current = 0;
-    const duration = 1200;
-    const stepTime = 16;
-    const steps = Math.ceil(duration / stepTime);
-    const increment = target / steps;
-    let count = 0;
-
-    const interval = setInterval(() => {
-      current += increment;
-      count += 1;
-      valueElement.textContent = unit === 'zones' ? Math.round(current) : current.toFixed(1);
-      if (count >= steps) {
-        clearInterval(interval);
-        valueElement.textContent = unit === 'zones' ? `${Math.round(target)}` : `${target.toFixed(1)}`;
-      }
-    }, stepTime);
-
-    const changeEl = document.createElement('div');
-    changeEl.className = 'metric-change';
-    changeEl.textContent = change;
-    card.appendChild(changeEl);
-  });
-}
-
 function renderStations(stations) {
+  latestStations = stations;
   stationList.innerHTML = '';
   stations.forEach((station) => {
     const stationCard = document.createElement('article');
@@ -140,10 +123,10 @@ function renderStations(stations) {
         <p>${station.location}</p>
       </div>
       <div class="station-meta">
-        <span class="station-badge">${station.status}</span>
+        <span class="station-badge">Sample reading</span>
         <span>Temp: ${station.temperature.toFixed(1)}°C</span>
         <span>Heat Index: ${station.heat_index.toFixed(1)}°C</span>
-        <span>Updated ${station.updated}</span>
+        <span>Demonstration data</span>
       </div>
     `;
     stationList.appendChild(stationCard);
@@ -164,6 +147,7 @@ function renderAlerts(alerts) {
       </div>
       <p>${alert.reason}</p>
       <p><strong>Action:</strong> ${alert.action}</p>
+      <p class="alert-source">Source: ${alert.source || 'Demonstration station feed'} · Threshold-based demonstration, not an official warning.</p>
     `;
     alertList.appendChild(alertCard);
   });
@@ -235,6 +219,7 @@ async function loadAdminUsers() {
 }
 
 function updateRegionPanel(region) {
+  selectedRegion = region;
   selectedRegionName.textContent = region.name;
   panelTemp.textContent = `${region.temperature.toFixed(1)}°C`;
   panelFeels.textContent = `${region.feels_like.toFixed(1)}°C`;
@@ -242,7 +227,11 @@ function updateRegionPanel(region) {
   panelRisk.textContent = region.risk;
   panelAnomaly.textContent = region.anomaly;
   panelAction.textContent = region.action;
-  regionSelect.value = region.name;
+    if ([...regionSelect.options].some((option) => option.value === region.name)) {
+      regionSelect.value = region.name;
+    } else {
+      regionSelect.value = 'Live map grid cell';
+    }
 }
 
 function initRegionSelection() {
@@ -268,19 +257,10 @@ function renderLiveMap(data) {
   }
   if (!liveLeafletMap) {
     liveLeafletMap = L.map(regionMap, { zoomControl: true, attributionControl: true }).setView([22.5, 79], 4.5);
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png', {
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
       maxZoom: 8,
       attribution: '&copy; OpenStreetMap contributors &copy; CARTO'
     }).addTo(liveLeafletMap);
-    fetch('https://raw.githubusercontent.com/datameet/maps/master/States/india_state.geojson')
-      .then((response) => response.json())
-      .then((geometry) => {
-        liveBoundaryLayer = L.geoJSON(geometry, {
-          style: { color: '#d8f3ff', weight: 1.5, fillColor: '#183b4d', fillOpacity: 0.2 }
-        }).addTo(liveLeafletMap);
-        liveLeafletMap.fitBounds(liveBoundaryLayer.getBounds(), { padding: [18, 18] });
-      })
-      .catch(() => { liveMapStatus.textContent = 'Live feed · boundary unavailable'; });
     liveHeatLayer = L.heatLayer([], {
       radius: 38,
       blur: 28,
@@ -289,48 +269,62 @@ function renderLiveMap(data) {
       gradient: { 0.15: '#2c7bb6', 0.35: '#4dcadc', 0.55: '#a6d96a', 0.72: '#fdae61', 0.88: '#f46d43', 1: '#d73027' }
     }).addTo(liveLeafletMap);
   }
-  const temperatures = data.points.map((point) => point.temperature).filter(Number.isFinite);
-  const apparentTemperatures = data.points.map((point) => point.apparent_temperature).filter(Number.isFinite);
+  const points = data.points.filter((point) => Number.isFinite(point.lat) && Number.isFinite(point.lon) && Number.isFinite(point.temperature));
+  if (!points.length) {
+    liveMapStatus.textContent = 'Weather feed returned no usable temperature points';
+    return;
+  }
+  latestMapData = data;
+  const temperatures = points.map((point) => point.temperature);
+  const apparentTemperatures = points.map((point) => Number.isFinite(point.apparent_temperature) ? point.apparent_temperature : point.temperature);
+  const minimumTemperature = Math.min(...temperatures);
+  const maximumTemperature = Math.max(...temperatures);
+  const temperatureRange = maximumTemperature - minimumTemperature;
+  const normalizationRange = temperatureRange || 1;
+  if (!liveMapFitted) {
+    liveLeafletMap.fitBounds(L.latLngBounds(points.map((point) => [point.lat, point.lon])).pad(0.08));
+    liveMapFitted = true;
+  }
   const averageTemperature = temperatures.reduce((sum, value) => sum + value, 0) / temperatures.length;
   const maximumHeatIndex = Math.max(...apparentTemperatures);
   const extremeCount = temperatures.filter((temperature) => temperature > 42).length;
-  const liveValues = [averageTemperature, maximumHeatIndex, extremeCount, data.points.length, averageTemperature - 30];
+  const liveValues = [averageTemperature, maximumHeatIndex, extremeCount, points.length, temperatureRange];
   snapshotCards.forEach((card, index) => {
     const valueElement = card.querySelector('.metric-line strong');
     if (!valueElement) return;
     valueElement.textContent = index === 2 || index === 3 ? Math.round(liveValues[index]) : liveValues[index].toFixed(1);
   });
-  const minimumTemperature = Math.min(...temperatures);
-  const temperatureRange = Math.max(...temperatures) - minimumTemperature || 1;
-  liveHeatLayer.setLatLngs(data.points.map((point) => [
+  liveHeatLayer.setLatLngs(points.map((point) => [
     point.lat,
     point.lon,
-    0.25 + ((point.temperature - minimumTemperature) / temperatureRange) * 0.75
+    0.25 + ((point.temperature - minimumTemperature) / normalizationRange) * 0.75
   ]));
-  data.points.forEach((point) => {
+  if (!livePointLayer) livePointLayer = L.layerGroup().addTo(liveLeafletMap);
+  livePointLayer.clearLayers();
+  points.forEach((point) => {
     const marker = L.circleMarker([point.lat, point.lon], {
-      radius: 7,
+      radius: 6,
       color: '#ffffff',
-      fillColor: '#ffffff',
-      fillOpacity: 0,
-      opacity: 0,
-      weight: 0
-    }).addTo(liveLeafletMap);
-    marker.bindTooltip(`${point.temperature}°C · feels like ${point.apparent_temperature}°C`, { direction: 'top' });
+      fillColor: point.temperature > 42 ? '#d73027' : point.temperature >= 36 ? '#fdae61' : point.temperature >= 28 ? '#a6d96a' : '#2c7bb6',
+      fillOpacity: 0.9,
+      weight: 1.5
+    }).addTo(livePointLayer);
+    const apparentTemperature = Number.isFinite(point.apparent_temperature) ? point.apparent_temperature : point.temperature;
+    marker.bindTooltip(`${point.temperature}°C · feels like ${apparentTemperature}°C`, { direction: 'top' });
     marker.on('click', () => {
       const risk = heatColor(point.temperature) === 'extreme' ? 'Extreme Alert' : heatColor(point.temperature) === 'severe' ? 'Severe Heat' : heatColor(point.temperature) === 'mild' ? 'Mild Heat' : 'Normal';
       updateRegionPanel({
         name: `${point.lat.toFixed(0)}°N / ${point.lon.toFixed(0)}°E`,
         temperature: point.temperature,
-        feels_like: point.apparent_temperature,
-        humidity: point.humidity,
+        feels_like: Number.isFinite(point.apparent_temperature) ? point.apparent_temperature : point.temperature,
+        humidity: Number.isFinite(point.humidity) ? point.humidity : 0,
         risk,
-        anomaly: 'Live feed',
+        anomaly: data.source,
         action: risk === 'Extreme Alert' ? 'Activate cooling centers and alert vulnerable populations.' : 'Monitor local conditions and maintain hydration.'
       });
     });
   });
-  liveMapStatus.textContent = `Live feed · ${data.points.length} grid cells · ${data.source}`;
+  liveMapStatus.textContent = `${data.source} · ${points.length} grid cells`;
   liveMapUpdated.textContent = `Updated ${new Date(data.updated_at).toLocaleTimeString()}`;
 }
 
@@ -344,6 +338,63 @@ async function loadLiveMap() {
     liveMapUpdated.textContent = 'Retrying in 5 minutes';
     console.error('Live map error:', error);
   }
+}
+
+function escapeHtml(value) {
+  return String(value).replace(/[&<>"']/g, (character) => ({
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#39;'
+  })[character]);
+}
+
+function buildCaseStudy(event) {
+  event.preventDefault();
+  const title = escapeHtml(document.getElementById('caseStudyTitle').value.trim());
+  const area = escapeHtml(document.getElementById('caseStudyRegion').value.trim());
+  const question = escapeHtml(document.getElementById('caseStudyQuestion').value.trim());
+  const mapPoints = latestMapData?.points?.filter((point) => Number.isFinite(point.temperature)) || [];
+  const averageTemperature = mapPoints.length
+    ? (mapPoints.reduce((total, point) => total + point.temperature, 0) / mapPoints.length).toFixed(1)
+    : 'Unavailable';
+  const maximumTemperature = mapPoints.length
+    ? `${Math.max(...mapPoints.map((point) => point.temperature)).toFixed(1)}°C`
+    : 'Unavailable';
+  const highestStation = latestStations.length
+    ? latestStations.reduce((highest, station) => station.temperature > highest.temperature ? station : highest)
+    : null;
+  const alertCount = document.querySelectorAll('.alert-card').length;
+  const source = latestMapData?.source || 'Weather map feed unavailable';
+
+  caseStudyReport.innerHTML = `
+    <p class="report-kicker">HEATSENSE AI · CASE STUDY</p>
+    <h3>${title}</h3>
+    <p class="report-meta">Study area: ${area} · Prepared ${new Date().toLocaleDateString()}</p>
+    <h4>Research question</h4>
+    <p>${question}</p>
+    <h4>Purpose and approach</h4>
+    <p>This case study examines how a heat-monitoring dashboard can turn temperature signals into understandable risk levels and practical preparedness actions. It reviews a gridded weather map, sample station readings, threshold-based alerts, and audience-specific guidance. The study-area field identifies the intended focus; the displayed grid spans India and the sample stations include other cities, so these figures are contextual rather than area-specific findings.</p>
+    <h4>Evidence snapshot</h4>
+    <ul>
+      <li>Map grid average temperature: ${averageTemperature}${averageTemperature === 'Unavailable' ? '' : '°C'}; highest grid reading: ${maximumTemperature}.</li>
+      <li>Highest demonstration station reading: ${highestStation ? `${highestStation.temperature.toFixed(1)}°C at ${escapeHtml(highestStation.location)}` : 'Station data unavailable'}.</li>
+      <li>Active threshold alerts shown: ${alertCount}. Map data source: ${escapeHtml(source)}.</li>
+    </ul>
+    <h4>Preparedness implications</h4>
+    <p>Use rising heat readings to prioritize local checks on older adults, people with health conditions, outdoor workers, and households with limited cooling. Pair alerts with clear advice on hydration, shade, reduced midday exertion, and where to seek help. Escalate through local authorities rather than treating a dashboard threshold as an official warning.</p>
+    <h4>Limitations</h4>
+    <p class="report-caveat">Station readings and alert thresholds in this project are a demonstration, not validated public-safety guidance. Weather-feed availability and geographic coverage vary. This snapshot is not a historical climate analysis and should not be presented as an official IMD warning or as proof of a long-term trend.</p>
+    <p class="report-meta">Suggested next step: compare verified local observations with official IMD heatwave criteria and district heat-action plans.</p>
+  `;
+}
+
+function printCaseStudy() {
+  if (!caseStudyForm.reportValidity()) return;
+  buildCaseStudy({ preventDefault() {} });
+  document.body.classList.add('print-report');
+  window.print();
 }
 
 function initAlertFiltering() {
@@ -466,18 +517,60 @@ function initAdvisoryGenerator() {
   });
 
   generateAdvisoryFromMapBtn.addEventListener('click', () => {
-    const regionName = selectedRegionName.textContent;
-    const selected = regionData.find((entry) => entry.name === regionName) || regionData[0];
-    generateAdvisory(stakeholderSelect.value, selected.name, selected.risk);
+      generateAdvisory(stakeholderSelect.value, selectedRegion.name, selectedRegion.risk);
   });
+    caseStudyForm.addEventListener('submit', buildCaseStudy);
+    printCaseStudyButton.addEventListener('click', printCaseStudy);
+    window.addEventListener('afterprint', () => document.body.classList.remove('print-report'));
 
   refreshTestStatusBtn.addEventListener('click', loadTestStatus);
   runTestsNowBtn.addEventListener('click', runAllTests);
 }
 
-function init() {
+async function authenticate() {
+  try {
+    const response = await fetch(`${API_ROOT}/auth/session`, { credentials: 'include' });
+    const state = await response.json();
+    if (state.authenticated) {
+      document.body.classList.add('authenticated');
+      return true;
+    }
+  } catch (error) {
+    loginMessage.textContent = 'The backend is unavailable. Start the Flask server and try again.';
+  }
+  return false;
+}
+
+async function handleLogin(event) {
+  event.preventDefault();
+  loginMessage.textContent = 'Signing in...';
+  const formData = new FormData(loginForm);
+  try {
+    const response = await fetch(`${API_ROOT}/auth/login`, {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: formData.get('email'), password: formData.get('password') })
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error || 'Unable to sign in.');
+    loginMessage.textContent = '';
+    document.body.classList.add('authenticated');
+    initDashboard();
+  } catch (error) {
+    loginMessage.textContent = error.message;
+  }
+}
+
+async function handleLogout() {
+  await fetch(`${API_ROOT}/auth/logout`, { method: 'POST', credentials: 'include' });
+  document.body.classList.remove('authenticated');
+  loginForm.reset();
+  loginMessage.textContent = '';
+}
+
+function initDashboard() {
   initNavigation();
-  animateMetrics();
   initRegionSelection();
   initAlertFiltering();
   initAdvisoryGenerator();
@@ -489,4 +582,8 @@ function init() {
   loadTestStatus();
 }
 
-init();
+loginForm.addEventListener('submit', handleLogin);
+logoutButton.addEventListener('click', handleLogout);
+authenticate().then((authenticated) => {
+  if (authenticated) initDashboard();
+});

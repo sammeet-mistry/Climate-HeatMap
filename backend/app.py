@@ -1,25 +1,42 @@
 import os
 from flask import Flask, jsonify, request
 from flask_cors import CORS
-from datetime import datetime
+from datetime import datetime, timezone
 import subprocess
 import sys
 import shutil
 import json
 import urllib.parse
 import urllib.request
+import hmac
+import secrets
+from flask import session
 
 BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 frontend_path = os.path.join(BASE_DIR, 'frontend')
 app = Flask(__name__, static_folder=frontend_path, static_url_path='')
-CORS(app)
+app.secret_key = os.environ.get('HEATSENSE_SESSION_SECRET') or secrets.token_hex(32)
+CORS(app, supports_credentials=True)
 app.config['TEMPLATES_AUTO_RELOAD'] = True
+app.config['SESSION_COOKIE_HTTPONLY'] = True
+app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
+app.config['SESSION_COOKIE_SECURE'] = os.environ.get('SESSION_COOKIE_SECURE', '0') == '1'
+IMD_API_URL = os.environ.get('IMD_API_URL', '').strip()
+AUTH_EMAIL = os.environ.get('HEATSENSE_ADMIN_EMAIL', 'admin@heatsense.local').strip().lower()
+AUTH_PASSWORD = os.environ.get('HEATSENSE_ADMIN_PASSWORD', 'ChangeMe123!')
 
 LIVE_GRID = [
     (lat, lon) for lat in (8, 12, 16, 20, 24, 28, 32, 36)
     for lon in (68, 73, 78, 83, 88, 93, 98)
 ]
 live_map_cache = {'timestamp': 0, 'data': None}
+
+
+@app.before_request
+def require_api_login():
+    if request.path.startswith('/api/') and request.path not in {'/api/auth/login', '/api/health'}:
+        if 'user' not in session:
+            return jsonify({'error': 'Authentication required.'}), 401
 
 
 def run_subprocess(command, cwd=None, timeout=25):
@@ -81,6 +98,39 @@ def run_java_tests():
 @app.route('/')
 def serve_frontend():
     return app.send_static_file('index.html')
+
+
+@app.route('/signin')
+def serve_signin():
+    return app.send_static_file('signin.html')
+
+
+@app.route('/api/health', methods=['GET'])
+def health_check():
+    return jsonify({'status': 'online', 'data_source': 'IMD' if IMD_API_URL else 'Open-Meteo development fallback'})
+
+
+@app.route('/api/auth/login', methods=['POST'])
+def login():
+    data = request.get_json(silent=True) or {}
+    email = str(data.get('email', '')).strip().lower()
+    password = str(data.get('password', ''))
+    if not hmac.compare_digest(email, AUTH_EMAIL) or not hmac.compare_digest(password, AUTH_PASSWORD):
+        return jsonify({'error': 'Invalid email or password.'}), 401
+    session.clear()
+    session['user'] = {'email': AUTH_EMAIL, 'name': 'HeatSense Administrator', 'role': 'Administrator'}
+    return jsonify({'user': session['user']})
+
+
+@app.route('/api/auth/session', methods=['GET'])
+def get_session():
+    return jsonify({'authenticated': 'user' in session, 'user': session.get('user')})
+
+
+@app.route('/api/auth/logout', methods=['POST'])
+def logout():
+    session.clear()
+    return jsonify({'success': True})
 
 # Sample telemetry and advisory data
 stations = [
@@ -152,36 +202,6 @@ stations = [
     }
 ]
 
-alerts = [
-    {
-        "id": 1,
-        "level": "Extreme Alert",
-        "region": "Central Plains",
-        "timestamp": "05:18 PM",
-        "conditions": "46.3°C, 28% humidity",
-        "reason": "Sustained peak and rapid anomaly increase",
-        "action": "Activate emergency cooling centers and issue heat advisories."
-    },
-    {
-        "id": 2,
-        "level": "Severe Heat",
-        "region": "Deccan Belt",
-        "timestamp": "05:10 PM",
-        "conditions": "45.0°C, 34% humidity",
-        "reason": "High heat index and prolonged daytime heat",
-        "action": "Limit outdoor operations and deploy hydration support."
-    },
-    {
-        "id": 3,
-        "level": "High Humidity Warning",
-        "region": "Coastal Corridor",
-        "timestamp": "05:02 PM",
-        "conditions": "41.8°C, 68% humidity",
-        "reason": "Humidity-driven heat stress risk",
-        "action": "Advise caution for vulnerable populations and delay strenuous activity."
-    }
-]
-
 users = [
     {'id': 1, 'name': 'Swarup Valvi', 'email': 'swarup@example.com', 'role': 'Administrator', 'status': 'Active', 'joined': '2026-01-18'},
     {'id': 2, 'name': 'Anita Rao', 'email': 'anita@example.com', 'role': 'Analyst', 'status': 'Active', 'joined': '2026-02-04'},
@@ -193,7 +213,7 @@ users = [
 
 def fallback_live_map():
     """Keep the dashboard useful when the upstream weather service is unavailable."""
-    now = datetime.utcnow().isoformat() + 'Z'
+    now = datetime.now(timezone.utc).isoformat().replace('+00:00', 'Z')
     points = []
     for latitude, longitude in LIVE_GRID:
         temperature = 28 + (latitude - 8) * 0.18 + (longitude - 68) * 0.08
@@ -225,7 +245,7 @@ def fetch_live_map():
         'current': 'temperature_2m,relative_humidity_2m,apparent_temperature,wind_speed_10m',
         'timezone': 'auto',
     })
-    url = f'https://api.open-meteo.com/v1/forecast?{query}'
+    url = IMD_API_URL or f'https://api.open-meteo.com/v1/forecast?{query}'
     with urllib.request.urlopen(url, timeout=8) as response:
         payload = json.loads(response.read().decode('utf-8'))
 
@@ -254,8 +274,8 @@ def fetch_live_map():
         })
 
     return {
-        'updated_at': datetime.utcnow().isoformat() + 'Z',
-        'source': 'Open-Meteo live weather',
+        'updated_at': datetime.now(timezone.utc).isoformat().replace('+00:00', 'Z'),
+        'source': 'IMD official feed' if IMD_API_URL else 'Open-Meteo development fallback',
         'points': points,
     }
 
@@ -272,12 +292,12 @@ def get_admin_users():
         'pending': sum(user['status'] == 'Pending' for user in users),
         'inactive': sum(user['status'] == 'Inactive' for user in users),
     }
-    return jsonify({'counts': counts, 'users': users, 'updated_at': datetime.utcnow().isoformat() + 'Z'})
+    return jsonify({'counts': counts, 'users': users, 'updated_at': datetime.now(timezone.utc).isoformat().replace('+00:00', 'Z')})
 
 
 @app.route('/api/live-map', methods=['GET'])
 def get_live_map():
-    now = datetime.utcnow().timestamp()
+    now = datetime.now(timezone.utc).timestamp()
     if live_map_cache['data'] and now - live_map_cache['timestamp'] < 300:
         return jsonify(live_map_cache['data'])
     try:
@@ -289,7 +309,34 @@ def get_live_map():
 
 @app.route('/api/alerts', methods=['GET'])
 def get_alerts():
-    return jsonify(alerts)
+    now = datetime.now(timezone.utc).strftime('%I:%M %p UTC')
+    generated_alerts = []
+    for station in stations:
+        temperature = station['temperature']
+        if temperature >= 45:
+            level = 'Extreme Alert'
+            action = 'Activate cooling locations, check on vulnerable residents, and follow local emergency guidance.'
+        elif temperature >= 42:
+            level = 'Severe Heat'
+            action = 'Limit strenuous outdoor activity, provide water and shade, and monitor for heat illness.'
+        elif temperature >= 38:
+            level = 'Mild Heat'
+            action = 'Share hydration and shade guidance, especially with people at higher risk.'
+        else:
+            continue
+
+        generated_alerts.append({
+            'id': station['id'],
+            'level': level,
+            'region': station['location'],
+            'timestamp': now,
+            'conditions': f"{temperature:.1f}°C, {station['humidity']}% humidity",
+            'reason': f"Demonstration station reading reached the {level.lower()} threshold.",
+            'action': action,
+            'source': 'Demonstration station feed',
+        })
+
+    return jsonify(generated_alerts)
 
 @app.route('/api/forecast', methods=['GET'])
 def get_forecast():
@@ -312,6 +359,7 @@ def generate_advisory():
     risk = data.get('risk', 'Mild Heat')
 
     descriptions = {
+        'Normal': 'Current readings are below the dashboard heat-alert thresholds.',
         'Extreme Alert': 'Lethal heat risk with rapid escalation of heat stress.',
         'Severe Heat': 'Dangerous thermal stress for outdoor activities.',
         'Mild Heat': 'Elevated heat load with caution advised.'
@@ -324,13 +372,14 @@ def generate_advisory():
         'General Public': 'Stay hydrated, avoid midday exposure, and check on family members and neighbors.'
     }
     precautions = {
+        'Normal': 'Continue routine hydration and sun protection; monitor official local forecasts for changes.',
         'Extreme Alert': 'Remain indoors with cooling and follow emergency instructions immediately.',
         'Severe Heat': 'Limit strenuous outdoor work, hydrate frequently, and seek shaded areas.',
         'Mild Heat': 'Monitor conditions, use sun protection, and stay hydrated throughout the day.'
     }
 
     advisory = {
-        'timestamp': datetime.utcnow().isoformat() + 'Z',
+        'timestamp': datetime.now(timezone.utc).isoformat().replace('+00:00', 'Z'),
         'stakeholder': stakeholder,
         'region': region,
         'risk': risk,
@@ -372,4 +421,4 @@ def serve_asset(path):
     return app.send_static_file(path)
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    app.run(host='0.0.0.0', port=int(os.environ.get('PORT', '5000')), debug=os.environ.get('FLASK_DEBUG') == '1')

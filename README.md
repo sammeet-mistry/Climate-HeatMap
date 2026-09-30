@@ -22,7 +22,19 @@
    ```bash
    python app.py
    ```
-3. Open your browser to `http://127.0.0.1:5000/`.
+3. Open your browser to `http://127.0.0.1:5000/signin`.
+
+### Login and IMD data
+
+The dashboard requires a session login. For local development, the default credentials are `admin@heatsense.local` / `ChangeMe123!`. Override them before starting the server:
+
+```powershell
+$env:HEATSENSE_ADMIN_EMAIL = 'your-email@example.com'
+$env:HEATSENSE_ADMIN_PASSWORD = 'use-a-strong-password'
+$env:HEATSENSE_SESSION_SECRET = 'use-a-long-random-secret'
+```
+
+Set `IMD_API_URL` to the approved IMD-compatible JSON feed used by your organization. The endpoint must return the current-weather arrays `temperature_2m`, `relative_humidity_2m`, `apparent_temperature`, and `wind_speed_10m`. The backend labels this response `IMD official feed`. When `IMD_API_URL` is absent, it uses Open-Meteo only as a clearly labeled development fallback and does not claim that data is from IMD.
 
 ## Notes
 
@@ -36,6 +48,7 @@
    - Build command: `pip install -r backend/requirements.txt`
    - Start command: `gunicorn backend.app:app`
 3. Keep the app port as `10000` in Render if prompted, or ensure the framework binds to the `$PORT` environment variable.
+4. Configure `HEATSENSE_ADMIN_EMAIL`, `HEATSENSE_ADMIN_PASSWORD`, `HEATSENSE_SESSION_SECRET`, and `IMD_API_URL` as secret environment variables.
 
 Example Render configuration is available in [render.yaml](render.yaml).
 

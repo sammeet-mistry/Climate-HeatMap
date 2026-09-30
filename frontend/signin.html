@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#06101f" />
+  <title>Sign in | HeatSense AI</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body class="standalone-signin">
+  <main class="login-screen" aria-labelledby="loginTitle">
+    <section class="login-panel">
+      <div class="login-mark" aria-hidden="true">☀</div>
+      <p class="eyebrow">IMD climate intelligence</p>
+      <h1 id="loginTitle">Sign in to HeatSense</h1>
+      <p class="login-intro">Access live heat risk data, advisories, and station telemetry.</p>
+      <form id="loginForm" class="login-form">
+        <label for="loginEmail">Email address</label>
+        <input id="loginEmail" name="email" type="email" autocomplete="username" required autofocus />
+        <label for="loginPassword">Password</label>
+        <input id="loginPassword" name="password" type="password" autocomplete="current-password" required />
+        <button class="button button-primary" type="submit">Sign in</button>
+        <p class="login-message" id="loginMessage" role="alert" aria-live="polite"></p>
+      </form>
+    </section>
+  </main>
+  <script src="signin.js"></script>
+</body>
+</html>

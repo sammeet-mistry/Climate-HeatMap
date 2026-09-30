@@ -53,9 +53,90 @@ img {
 }
 
 .app-shell {
+  display: none;
   max-width: 1400px;
   margin: 0 auto;
   padding: 20px 24px 40px;
+}
+
+.authenticated .app-shell {
+  display: block;
+}
+
+.login-screen {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: radial-gradient(circle at 20% 10%, rgba(255, 157, 84, 0.18), transparent 30%),
+              radial-gradient(circle at 90% 80%, rgba(77, 209, 255, 0.13), transparent 34%);
+}
+
+.authenticated .login-screen {
+  display: none;
+}
+
+.login-panel {
+  width: min(100%, 460px);
+  padding: 42px;
+  border: 1px solid rgba(136, 178, 255, 0.16);
+  border-radius: 24px;
+  background: rgba(10, 18, 30, 0.94);
+  box-shadow: var(--shadow);
+}
+
+.login-mark {
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  margin-bottom: 24px;
+  border-radius: 16px;
+  color: var(--accent);
+  background: rgba(255, 157, 84, 0.12);
+  font-size: 1.8rem;
+}
+
+.login-panel h1 {
+  margin: 0;
+  font-size: clamp(2rem, 5vw, 3rem);
+  line-height: 1.1;
+}
+
+.login-intro {
+  margin: 12px 0 28px;
+  color: var(--muted);
+}
+
+.login-form {
+  display: grid;
+  gap: 10px;
+}
+
+.login-form label {
+  color: #c1d8ff;
+  font-size: 0.9rem;
+}
+
+.login-form input {
+  width: 100%;
+  padding: 13px 14px;
+  margin-bottom: 8px;
+  border: 1px solid rgba(136, 178, 255, 0.2);
+  border-radius: 10px;
+  color: #e6f2ff;
+  background: rgba(4, 12, 20, 0.78);
+}
+
+.login-form input:focus {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+.login-message {
+  min-height: 24px;
+  margin: 4px 0 0;
+  color: #ff9da7;
 }
 
 .topnav {
@@ -196,7 +277,13 @@ img {
 
 main {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: 28px;
+  min-width: 0;
+}
+
+main > section {
+  min-width: 0;
 }
 
 .section-header {
@@ -1014,6 +1101,164 @@ main {
   color: #9bb6d6;
 }
 
+.case-study-heading {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+.case-study-heading > div > p:last-child {
+  max-width: 720px;
+  margin: 8px 0 0;
+  color: var(--muted);
+}
+
+.case-study-grid {
+  display: grid;
+  grid-template-columns: minmax(260px, 0.72fr) minmax(0, 1.28fr);
+  gap: 20px;
+}
+
+.case-study-form,
+.case-study-report {
+  padding: 24px;
+  border: 1px solid rgba(109, 170, 255, 0.12);
+  border-radius: 18px;
+  background: rgba(10, 18, 30, 0.78);
+}
+
+.case-study-form {
+  display: grid;
+  align-content: start;
+  gap: 10px;
+}
+
+.case-study-form label {
+  color: #d4e0ff;
+  font-size: 0.9rem;
+}
+
+.case-study-form input,
+.case-study-form textarea {
+  width: 100%;
+  margin-bottom: 8px;
+  padding: 12px 14px;
+  border: 1px solid rgba(112, 159, 224, 0.2);
+  border-radius: 10px;
+  color: #e8f2ff;
+  background: rgba(4, 10, 18, 0.9);
+  font: inherit;
+}
+
+.case-study-form textarea {
+  resize: vertical;
+}
+
+.case-study-form input:focus,
+.case-study-form textarea:focus {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+.case-study-report {
+  min-height: 320px;
+  background: linear-gradient(145deg, rgba(17, 29, 44, 0.96), rgba(10, 18, 30, 0.96));
+}
+
+.case-study-report h3 {
+  margin: 8px 0 12px;
+  font-size: 1.65rem;
+  line-height: 1.2;
+}
+
+.case-study-report h4 {
+  margin: 22px 0 6px;
+  color: #ffd19f;
+}
+
+.case-study-report p,
+.case-study-report li {
+  color: #c7d8f4;
+}
+
+.case-study-report ul {
+  margin: 8px 0;
+  padding-left: 22px;
+}
+
+.report-kicker,
+.report-meta {
+  color: #91c6e8 !important;
+  font-size: 0.78rem;
+  text-transform: uppercase;
+}
+
+.report-caveat {
+  padding: 12px 14px;
+  border-left: 3px solid var(--accent);
+  background: rgba(255, 157, 84, 0.08);
+}
+
+.forecast-note {
+  margin: -8px 0 20px;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+@media print {
+  body.print-report {
+    color: #17212b;
+    background: #ffffff;
+  }
+
+  body.print-report .login-screen,
+  body.print-report .topnav,
+  body.print-report .app-shell > footer,
+  body.print-report main > section:not(#case-study),
+  body.print-report #printCaseStudy,
+  body.print-report .case-study-form {
+    display: none !important;
+  }
+
+  body.print-report .app-shell {
+    display: block;
+    max-width: none;
+    padding: 0;
+  }
+
+  body.print-report main {
+    display: block;
+  }
+
+  body.print-report #case-study {
+    display: block;
+    padding: 0;
+    border: 0;
+    color: #17212b;
+    background: #ffffff;
+    box-shadow: none;
+  }
+
+  body.print-report .case-study-heading > div > p:last-child,
+  body.print-report .case-study-report p,
+  body.print-report .case-study-report li {
+    color: #263746 !important;
+  }
+
+  body.print-report .case-study-report {
+    padding: 0;
+    border: 0;
+    color: #17212b;
+    background: #ffffff;
+  }
+
+  body.print-report .case-study-report h3,
+  body.print-report .case-study-report h4 {
+    color: #17212b;
+  }
+}
+
 @media (max-width: 1180px) {
   .hero-panel,
   .risk-grid,
@@ -1103,6 +1348,8 @@ main {
 
   .admin-heading { align-items: stretch; flex-direction: column; }
   .admin-heading .button { width: 100%; }
+  .case-study-heading { align-items: stretch; flex-direction: column; }
+  .case-study-grid { grid-template-columns: 1fr; }
   .admin-stats { grid-template-columns: 1fr 1fr; }
 
   .risk-map-visual,

@@ -10,13 +10,29 @@
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
+  <section class="login-screen" id="loginScreen" aria-labelledby="loginTitle">
+    <div class="login-panel">
+      <div class="login-mark" aria-hidden="true">☀</div>
+      <p class="eyebrow">Heat risk research prototype</p>
+      <h1 id="loginTitle">Sign in to HeatSense</h1>
+      <p class="login-intro">Explore weather-feed readings, sample station scenarios, and heat-safety guidance.</p>
+      <form id="loginForm" class="login-form">
+        <label for="loginEmail">Email address</label>
+        <input id="loginEmail" name="email" type="email" autocomplete="username" required />
+        <label for="loginPassword">Password</label>
+        <input id="loginPassword" name="password" type="password" autocomplete="current-password" required />
+        <button class="button button-primary" type="submit">Sign in</button>
+        <p class="login-message" id="loginMessage" role="alert" aria-live="polite"></p>
+      </form>
+    </div>
+  </section>
   <div class="app-shell">
     <header class="topnav">
       <div class="brand-group">
         <div class="brand-mark" aria-hidden="true">☀️</div>
         <div class="brand-copy">
           <strong>HeatSense AI</strong>
-          <span>Climate Intelligence & Heatwave Early Warning Platform</span>
+          <span>Heat risk monitoring prototype</span>
         </div>
       </div>
 
@@ -31,15 +47,14 @@
         <a href="#risk-map">Risk Map</a>
         <a href="#alerts">Advisories</a>
         <a href="#analytics">Analytics</a>
+          <a href="#case-study">Case Study</a>
         <a href="#admin-users">Admin</a>
       </nav>
 
       <div class="nav-actions">
         <div class="status-pill"><span class="status-dot"></span>System Online</div>
         <button class="icon-btn" aria-label="View notifications">🔔</button>
-        <div class="profile-badge" aria-label="User profile">
-          <span>SM</span>
-        </div>
+        <button class="profile-badge" id="logoutButton" type="button" aria-label="Sign out">SM</button>
       </div>
     </header>
 
@@ -48,7 +63,7 @@
         <div class="hero-copy">
           <span class="eyebrow">HeatSense AI</span>
           <h1>Heatwaves are becoming more intense. Stay ahead of extreme heat.</h1>
-          <p>HeatSense AI combines weather data, IoT sensors, and predictive analytics to identify heatwave risks, issue early warnings, and support fast action.</p>
+          <p>An interactive heat-risk prototype that turns weather-feed readings and sample station data into a heat map, threshold alerts, and practical preparedness guidance.</p>
           <div class="hero-actions">
             <a class="button button-primary" href="#forecast">Explore Forecast</a>
             <a class="button button-secondary" href="#live-stations">View Live Data</a>
@@ -57,7 +72,7 @@
 
         <div class="hero-visual" aria-hidden="true">
           <div class="map-shell">
-            <div class="map-title">India Heatwave Zones</div>
+            <div class="map-title">Illustrative India risk zones</div>
             <div class="india-map">
               <div class="region region-extreme" title="Central Plains — Extreme Alert"></div>
               <div class="region region-severe" title="Deccan Belt — Severe Heat"></div>
@@ -72,46 +87,73 @@
         </div>
       </section>
 
+      <section class="case-study-section section-block" id="case-study">
+        <div class="section-header case-study-heading">
+          <div>
+            <p class="eyebrow">Case Study Builder</p>
+            <h2>Turn the dashboard into a clear, printable study.</h2>
+            <p>Choose a topic and research question. The report uses the data currently shown and identifies demonstration data clearly.</p>
+          </div>
+          <button class="button button-secondary" id="printCaseStudy" type="button" title="Print or save the case study as a PDF" aria-label="Print or save case study as PDF">Print / Save PDF</button>
+        </div>
+        <div class="case-study-grid">
+          <form class="case-study-form" id="caseStudyForm">
+            <label for="caseStudyTitle">Case study title</label>
+            <input id="caseStudyTitle" value="Heatwave early warning and community preparedness" required />
+            <label for="caseStudyRegion">Study area</label>
+            <input id="caseStudyRegion" value="Pune, Maharashtra" required />
+            <label for="caseStudyQuestion">Research question</label>
+            <textarea id="caseStudyQuestion" rows="3" required>How can local heat monitoring support earlier, more useful heat-safety actions?</textarea>
+            <button class="button button-primary" type="submit">Build case study</button>
+          </form>
+          <article class="case-study-report" id="caseStudyReport" aria-live="polite">
+            <p class="report-kicker">READY TO BUILD</p>
+            <h3>Your case study will appear here</h3>
+            <p>Enter your topic and research question, then build a concise report with evidence, response actions, and limitations.</p>
+          </article>
+        </div>
+      </section>
+
       <section class="snapshot-panel section-snap" aria-label="Live climate snapshot">
         <article class="snapshot-card" data-target="44.8" data-unit="°C" data-change="+1.5°C">
           <div class="card-icon">🌡️</div>
           <div>
-            <h3>Current Temperature</h3>
-            <div class="metric-line"><strong>0</strong><span>°C</span></div>
+            <h3>Grid Average Temperature</h3>
+            <div class="metric-line"><strong>--</strong><span>°C</span></div>
           </div>
-          <p>Up 1.5°C since yesterday.</p>
+          <p>Average across points in the selected weather feed.</p>
         </article>
         <article class="snapshot-card" data-target="48.2" data-unit="°C" data-change="+2.2°C">
           <div class="card-icon">🔥</div>
           <div>
-            <h3>Heat Index</h3>
-            <div class="metric-line"><strong>0</strong><span>°C</span></div>
+            <h3>Peak Apparent Temperature</h3>
+            <div class="metric-line"><strong>--</strong><span>°C</span></div>
           </div>
-          <p>Feels hotter across urban zones.</p>
+          <p>Highest reported feels-like temperature in the feed.</p>
         </article>
         <article class="snapshot-card" data-target="5" data-unit="zones" data-change="+1 zone">
           <div class="card-icon">⚠️</div>
           <div>
-            <h3>Active Heatwave Zones</h3>
-            <div class="metric-line"><strong>0</strong><span>zones</span></div>
+            <h3>Grid Points Above 42°C</h3>
+            <div class="metric-line"><strong>--</strong><span>points</span></div>
           </div>
-          <p>5 high-risk heatwave zones are active.</p>
+          <p>Prototype threshold count, not an official heatwave declaration.</p>
         </article>
         <article class="snapshot-card" data-target="12" data-unit="/12" data-change="Stable">
           <div class="card-icon">📡</div>
           <div>
-            <h3>Weather Stations Online</h3>
-            <div class="metric-line"><strong>0</strong><span>/12</span></div>
+            <h3>Weather Grid Cells</h3>
+            <div class="metric-line"><strong>--</strong><span>cells</span></div>
           </div>
-          <p>Live telemetry from all monitoring nodes.</p>
+          <p>Grid points included in the current weather response.</p>
         </article>
         <article class="snapshot-card" data-target="3.4" data-unit="°C" data-change="+0.8°C">
           <div class="card-icon">📈</div>
           <div>
-            <h3>Temperature Anomaly</h3>
-            <div class="metric-line"><strong>0</strong><span>°C</span></div>
+            <h3>Grid Temperature Range</h3>
+            <div class="metric-line"><strong>--</strong><span>°C</span></div>
           </div>
-          <p>Above seasonal norms.</p>
+          <p>Difference between the highest and lowest grid readings.</p>
         </article>
       </section>
 
@@ -125,7 +167,7 @@
           <div class="risk-map-card">
             <div class="live-map-toolbar">
               <div>
-                <strong>Live surface temperature</strong>
+                <strong>Temperature heat map</strong>
                 <span id="liveMapStatus">Connecting to weather feed...</span>
               </div>
               <span class="live-map-time" id="liveMapUpdated">Waiting for update</span>
@@ -151,7 +193,7 @@
               <div><span>Feels Like</span><strong id="panelFeels">48.2°C</strong></div>
               <div><span>Humidity</span><strong id="panelHumidity">36%</strong></div>
               <div><span>Risk Level</span><strong id="panelRisk">Extreme Alert</strong></div>
-              <div><span>Temperature Anomaly</span><strong id="panelAnomaly">+4.2°C</strong></div>
+              <div><span>Reading Context</span><strong id="panelAnomaly">Illustrative scenario</strong></div>
               <div><span>Recommended Action</span><strong id="panelAction">Activate emergency cooling centers and alert vulnerable populations.</strong></div>
             </div>
             <button class="button button-primary" id="generateAdvisoryFromMap">Generate Advisory</button>
@@ -161,8 +203,9 @@
 
       <section class="forecast-section section-block" id="forecast">
         <div class="section-header">
-          <p class="eyebrow">7-Day Heat Forecast</p>
-          <h2>Forecast trends, heat index, and anomaly signals at a glance.</h2>
+          <p class="eyebrow">Illustrative 7-Day Outlook</p>
+          <h2>Explore a sample heat scenario across the week.</h2>
+          <p class="forecast-note">Illustrative project values only; this is not an operational forecast.</p>
         </div>
 
         <div class="forecast-grid">
@@ -235,14 +278,14 @@
 
       <section class="stations-section section-block" id="live-stations">
         <div class="section-header">
-          <p class="eyebrow">Live Stations</p>
-          <h2>IoT weather stations reporting in real time.</h2>
+          <p class="eyebrow">Monitoring Network</p>
+          <h2>Station readings supporting the warning demonstration.</h2>
         </div>
 
         <div class="stations-grid">
           <div class="stations-map" aria-hidden="true">
             <div class="station-map-shell">
-              <div class="station-map-title">12/12 Stations Online</div>
+              <div class="station-map-title">Demonstration station network</div>
               <div class="station-map-visual">
                 <div class="station-dot station-1" title="SVU Campus"></div>
                 <div class="station-dot station-2" title="Shivneri Observatory"></div>
@@ -256,8 +299,8 @@
 
           <div class="stations-panel">
             <div class="station-summary">
-              <span>12/12 Stations Online</span>
-              <strong>Live monitoring across the network</strong>
+              <span>Sample station telemetry</span>
+              <strong>Monitoring coverage for the case study</strong>
             </div>
             <div class="station-list" id="stationList"></div>
           </div>
@@ -283,8 +326,8 @@
 
       <section class="advisory-section section-block" id="advisory">
         <div class="section-header">
-          <p class="eyebrow">AI Advisory Generator</p>
-          <h2>Generate stakeholder-specific heatwave guidance.</h2>
+          <p class="eyebrow">Rule-Based Advisory</p>
+          <h2>Generate stakeholder-specific heat-safety guidance.</h2>
         </div>
 
         <div class="advisory-grid">
@@ -302,23 +345,23 @@
             <label>
               Region
               <select id="regionSelect">
-                <option>Mumbai</option>
-                <option>Pune</option>
-                <option>Delhi</option>
-                <option>Ahmedabad</option>
-                <option>Nagpur</option>
-                <option>Other</option>
+                <option>Central Plains</option>
+                <option>Deccan Belt</option>
+                <option>Coastal Corridor</option>
+                <option>Northern Highlands</option>
+                <option>Live map grid cell</option>
               </select>
             </label>
             <label>
               Risk level
               <select id="riskSelect">
+                <option>Normal</option>
                 <option>Extreme Alert</option>
                 <option>Severe Heat</option>
                 <option>Mild Heat</option>
               </select>
             </label>
-            <button type="button" class="button button-primary" id="generateAdvisory">Generate AI Advisory</button>
+            <button type="button" class="button button-primary" id="generateAdvisory">Generate advisory</button>
           </form>
 
           <div class="advisory-result" id="advisoryResult">
@@ -335,8 +378,8 @@
 
       <section class="analytics-section section-block" id="analytics">
         <div class="section-header">
-          <p class="eyebrow">Analytics</p>
-          <h2>Performance insights and climate trend analysis.</h2>
+          <p class="eyebrow">Illustrative Project Metrics</p>
+          <h2>Example indicators for a future climate analysis.</h2>
         </div>
 
         <div class="analytics-grid">
@@ -456,19 +499,19 @@
 
         <div class="research-grid">
           <article class="research-card">
-            <span>Climate Trends</span>
-            <h3>Long-term warming and emerging heatwave patterns</h3>
-            <p>The latest climate intelligence shows a persistent rise in regional temperatures and a growing footprint of heatwave risk zones.</p>
+            <span>Heat Exposure</span>
+            <h3>Risk depends on people as well as temperature</h3>
+            <p>Humidity, housing, outdoor work, health, and access to cooling shape who is most affected during extreme heat.</p>
           </article>
           <article class="research-card">
-            <span>Historical Data</span>
-            <h3>Seasonal peaks compared to climatology</h3>
-            <p>By tracking anomalies against historical baselines, HeatSense AI highlights when current conditions exceed expected thresholds.</p>
+            <span>Historical Context</span>
+            <h3>Why a verified baseline matters</h3>
+            <p>A current-weather snapshot cannot establish a climate trend. Long-term conclusions need quality-controlled observations and a suitable climatological baseline.</p>
           </article>
           <article class="research-card">
-            <span>Model Insights</span>
-            <h3>Weather station data driving smarter warnings</h3>
-            <p>Live telemetry from IoT stations is combined with predictive models to improve warning lead time and advisory relevance.</p>
+            <span>Response Planning</span>
+            <h3>Turn a risk signal into a useful action</h3>
+            <p>This prototype demonstrates simple temperature thresholds and audience-specific guidance. Local agencies must validate criteria before issuing public warnings.</p>
           </article>
         </div>
       </section>

@@ -37,7 +37,72 @@ def test_fetch_live_map_parses_open_meteo_arrays(monkeypatch):
 
     result = app_module.fetch_live_map()
 
-    assert result["source"] == "Open-Meteo live weather"
+    assert result["source"] == "Open-Meteo development fallback"
     assert len(result["points"]) == 2
     assert result["points"][0]["temperature"] == 42.4
     assert result["points"][1]["humidity"] == 40
+
+
+def test_api_requires_login_and_accepts_configured_credentials():
+    client = app_module.app.test_client()
+
+    unauthenticated = client.get('/api/stations')
+    assert unauthenticated.status_code == 401
+
+    invalid = client.post('/api/auth/login', json={
+        'email': app_module.AUTH_EMAIL,
+        'password': 'wrong-password',
+    })
+    assert invalid.status_code == 401
+
+    authenticated = client.post('/api/auth/login', json={
+        'email': app_module.AUTH_EMAIL,
+        'password': app_module.AUTH_PASSWORD,
+    })
+    assert authenticated.status_code == 200
+    assert client.get('/api/stations').status_code == 200
+
+    client.post('/api/auth/logout')
+    assert client.get('/api/stations').status_code == 401
+
+
+def test_alerts_are_generated_from_station_thresholds():
+    client = app_module.app.test_client()
+    client.post('/api/auth/login', json={
+        'email': app_module.AUTH_EMAIL,
+        'password': app_module.AUTH_PASSWORD,
+    })
+
+    original_temperature = app_module.stations[0]['temperature']
+    try:
+        app_module.stations[0]['temperature'] = 45.0
+        response = client.get('/api/alerts')
+        alerts = response.get_json()
+
+        assert response.status_code == 200
+        assert alerts[0]['level'] == 'Extreme Alert'
+        assert alerts[0]['source'] == 'Demonstration station feed'
+
+        app_module.stations[0]['temperature'] = 37.9
+        alerts = client.get('/api/alerts').get_json()
+        assert all(alert['id'] != app_module.stations[0]['id'] for alert in alerts)
+    finally:
+        app_module.stations[0]['temperature'] = original_temperature
+
+
+def test_normal_risk_advisory_includes_precautions():
+    client = app_module.app.test_client()
+    client.post('/api/auth/login', json={
+        'email': app_module.AUTH_EMAIL,
+        'password': app_module.AUTH_PASSWORD,
+    })
+
+    response = client.post('/api/advisory', json={
+        'stakeholder': 'General Public',
+        'region': 'Northern Highlands',
+        'risk': 'Normal',
+    })
+
+    assert response.status_code == 200
+    assert 'below the dashboard heat-alert thresholds' in response.get_json()['risk_description']
+    assert 'Continue routine hydration' in response.get_json()['precautions']
