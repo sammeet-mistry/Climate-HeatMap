@@ -5,11 +5,20 @@ const API_ROOT = (() => {
   }
 
   if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-    return 'http://localhost:5000/api';
+    if (window.location.port === '4173' || window.location.port === '3000') {
+      return 'http://127.0.0.1:5000/api';
+    }
+    return `${window.location.origin}/api`;
   }
 
   return '/api';
 })();
+
+const CARTO_API_KEY = window.CARTO_API_KEY || '';
+
+function apiFetch(path, options = {}) {
+  return fetch(`${API_ROOT}${path}`, { ...options, credentials: 'include' });
+}
 
 const stationList = document.getElementById('stationList');
 const alertList = document.getElementById('alertList');
@@ -31,6 +40,7 @@ const panelAnomaly = document.getElementById('panelAnomaly');
 const panelAction = document.getElementById('panelAction');
 const navToggle = document.getElementById('navToggle');
 const siteNav = document.getElementById('siteNav');
+const notificationButton = document.getElementById('notificationButton');
 const filterPills = document.querySelectorAll('.filter-pill');
 const regionMap = document.getElementById('regionMap');
 const liveMapStatus = document.getElementById('liveMapStatus');
@@ -109,6 +119,28 @@ function initNavigation() {
     navToggle.setAttribute('aria-expanded', String(!expanded));
     siteNav.classList.toggle('open');
   });
+
+  siteNav.addEventListener('click', (event) => {
+    if (!event.target.closest('a')) return;
+    navToggle.setAttribute('aria-expanded', 'false');
+    siteNav.classList.remove('open');
+  });
+
+  notificationButton.addEventListener('click', () => {
+    document.getElementById('alerts').scrollIntoView({ behavior: 'smooth' });
+  });
+
+  if ('IntersectionObserver' in window) {
+    const links = [...siteNav.querySelectorAll('a')];
+    const observer = new IntersectionObserver((entries) => {
+      const current = entries
+        .filter((entry) => entry.isIntersecting)
+        .sort((first, second) => second.intersectionRatio - first.intersectionRatio)[0];
+      if (!current) return;
+      links.forEach((link) => link.classList.toggle('active', link.hash === `#${current.target.id}`));
+    }, { rootMargin: '-18% 0px -68% 0px', threshold: [0, 0.2, 0.5] });
+    document.querySelectorAll('main > section[id]').forEach((section) => observer.observe(section));
+  }
 }
 
 function renderStations(stations) {
@@ -171,9 +203,9 @@ function renderForecast(forecast) {
 async function loadData() {
   try {
     const [stationsResponse, alertsResponse, forecastResponse] = await Promise.all([
-      fetch(`${API_ROOT}/stations`),
-      fetch(`${API_ROOT}/alerts`),
-      fetch(`${API_ROOT}/forecast`)
+      apiFetch('/stations'),
+      apiFetch('/alerts'),
+      apiFetch('/forecast')
     ]);
 
     if (!stationsResponse.ok || !alertsResponse.ok || !forecastResponse.ok) {
@@ -197,7 +229,7 @@ async function loadData() {
 
 async function loadAdminUsers() {
   try {
-    const response = await fetch(`${API_ROOT}/admin/users`);
+    const response = await apiFetch('/admin/users');
     if (!response.ok) throw new Error('User data fetch failed');
     const data = await response.json();
     Object.entries(data.counts).forEach(([key, value]) => {
@@ -250,6 +282,25 @@ function heatColor(temperature) {
   return 'normal';
 }
 
+function buildFallbackMapData() {
+  const now = new Date();
+  const points = [
+    { lat: 8, lon: 68, temperature: 29.8, apparent_temperature: 31.5, humidity: 42 },
+    { lat: 12, lon: 73, temperature: 34.9, apparent_temperature: 37.8, humidity: 46 },
+    { lat: 16, lon: 78, temperature: 39.2, apparent_temperature: 42.4, humidity: 40 },
+    { lat: 20, lon: 83, temperature: 42.8, apparent_temperature: 45.9, humidity: 36 },
+    { lat: 24, lon: 88, temperature: 44.1, apparent_temperature: 47.3, humidity: 35 },
+    { lat: 28, lon: 93, temperature: 41.2, apparent_temperature: 44.0, humidity: 38 },
+    { lat: 32, lon: 98, temperature: 38.7, apparent_temperature: 41.2, humidity: 33 }
+  ];
+
+  return {
+    updated_at: now.toISOString(),
+    source: 'offline fallback map',
+    points
+  };
+}
+
 function renderLiveMap(data) {
   if (!window.L) {
     liveMapStatus.textContent = 'Map library unavailable';
@@ -257,9 +308,11 @@ function renderLiveMap(data) {
   }
   if (!liveLeafletMap) {
     liveLeafletMap = L.map(regionMap, { zoomControl: true, attributionControl: true }).setView([22.5, 79], 4.5);
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-      maxZoom: 8,
-      attribution: '&copy; OpenStreetMap contributors &copy; CARTO'
+    const tileUrl = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
+
+    L.tileLayer(tileUrl, {
+      maxZoom: 18,
+      attribution: '&copy; OpenStreetMap contributors'
     }).addTo(liveLeafletMap);
     liveHeatLayer = L.heatLayer([], {
       radius: 38,
@@ -330,12 +383,14 @@ function renderLiveMap(data) {
 
 async function loadLiveMap() {
   try {
-    const response = await fetch(`${API_ROOT}/live-map`);
+    const response = await apiFetch('/live-map');
     if (!response.ok) throw new Error('Live map fetch failed');
     renderLiveMap(await response.json());
   } catch (error) {
+    const fallbackData = buildFallbackMapData();
+    renderLiveMap(fallbackData);
     liveMapStatus.textContent = 'Weather feed unavailable';
-    liveMapUpdated.textContent = 'Retrying in 5 minutes';
+    liveMapUpdated.textContent = 'Showing offline fallback map';
     console.error('Live map error:', error);
   }
 }
@@ -413,7 +468,7 @@ function initAlertFiltering() {
 
 async function generateAdvisory(stakeholder, region, risk) {
   try {
-    const response = await fetch(`${API_ROOT}/advisory`, {
+    const response = await apiFetch('/advisory', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ stakeholder, region, risk })
@@ -437,10 +492,29 @@ async function generateAdvisory(stakeholder, region, risk) {
         <p class="advisory-footer">Generated at ${new Date(advisory.timestamp).toLocaleString()}</p>
       </div>
     `;
+    showAdvisoryPopup(`Heat advisory generated for ${advisory.region}.`);
   } catch (error) {
     advisoryBody.innerHTML = '<p class="notification-text">Failed to generate advisory. Please try again later.</p>';
+    showAdvisoryPopup('Heat advisory could not be generated. Please try again.');
     console.error('Advisory error:', error);
   }
+}
+
+function showAdvisoryPopup(message) {
+  let popup = document.getElementById('heat-advisory-popup');
+  if (!popup) {
+    popup = document.createElement('div');
+    popup.id = 'heat-advisory-popup';
+    popup.className = 'advisory-popup';
+    document.body.appendChild(popup);
+  }
+
+  popup.textContent = message;
+  popup.classList.add('visible');
+  clearTimeout(showAdvisoryPopup.timeoutId);
+  showAdvisoryPopup.timeoutId = setTimeout(() => {
+    popup.classList.remove('visible');
+  }, 2600);
 }
 
 function setCardState(cardElement, state) {
@@ -473,7 +547,7 @@ async function loadTestStatus() {
   updateTestCard(frontendStatus, frontendOutput, 'success', 'Frontend is loaded.');
 
   try {
-    const response = await fetch(`${API_ROOT}/test-status`);
+    const response = await apiFetch('/test-status');
     if (!response.ok) throw new Error('Status fetch failed');
     const data = await response.json();
 
@@ -495,7 +569,7 @@ async function runAllTests() {
   updateTestCard(apiStatus, apiOutput, 'warning', 'Running backend checks...');
 
   try {
-    const response = await fetch(`${API_ROOT}/run-tests`, { method: 'POST' });
+    const response = await apiFetch('/run-tests', { method: 'POST' });
     if (!response.ok) throw new Error('Run tests request failed');
     const data = await response.json();
 
@@ -529,7 +603,7 @@ function initAdvisoryGenerator() {
 
 async function authenticate() {
   try {
-    const response = await fetch(`${API_ROOT}/auth/session`, { credentials: 'include' });
+    const response = await apiFetch('/auth/session');
     const state = await response.json();
     if (state.authenticated) {
       document.body.classList.add('authenticated');
@@ -546,7 +620,7 @@ async function handleLogin(event) {
   loginMessage.textContent = 'Signing in...';
   const formData = new FormData(loginForm);
   try {
-    const response = await fetch(`${API_ROOT}/auth/login`, {
+    const response = await apiFetch('/auth/login', {
       method: 'POST',
       credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
@@ -563,7 +637,7 @@ async function handleLogin(event) {
 }
 
 async function handleLogout() {
-  await fetch(`${API_ROOT}/auth/logout`, { method: 'POST', credentials: 'include' });
+  await apiFetch('/auth/logout', { method: 'POST' });
   document.body.classList.remove('authenticated');
   loginForm.reset();
   loginMessage.textContent = '';

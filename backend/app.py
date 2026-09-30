@@ -203,7 +203,8 @@ stations = [
 ]
 
 users = [
-    {'id': 1, 'name': 'Swarup Valvi', 'email': 'swarup@example.com', 'role': 'Administrator', 'status': 'Active', 'joined': '2026-01-18'},
+    {'id': 1, 'name': 'Sammeet Mistry', 'email': 'sammeet@example.com', 'role': 'Administrator', 'status': 'Active', 'joined': '2026-01-18'},
+    {'id': 6, 'name': 'Shravan Thakker', 'email': 'shravan@example.com', 'role': 'Administrator', 'status': 'Active', 'joined': '2026-03-10'},
     {'id': 2, 'name': 'Anita Rao', 'email': 'anita@example.com', 'role': 'Analyst', 'status': 'Active', 'joined': '2026-02-04'},
     {'id': 3, 'name': 'Rohan Desai', 'email': 'rohan@example.com', 'role': 'Field Operator', 'status': 'Pending', 'joined': '2026-02-22'},
     {'id': 4, 'name': 'Asha Kulkarni', 'email': 'asha@example.com', 'role': 'Analyst', 'status': 'Active', 'joined': '2026-03-01'},

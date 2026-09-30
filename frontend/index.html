@@ -7,6 +7,9 @@
   <meta name="theme-color" content="#06101f" />
   <title>HeatSense AI | Climate Intelligence & Heatwave Early Warning Platform</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,500;9..144,600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
@@ -29,7 +32,7 @@
   <div class="app-shell">
     <header class="topnav">
       <div class="brand-group">
-        <div class="brand-mark" aria-hidden="true">☀️</div>
+        <div class="brand-mark" aria-hidden="true">HS</div>
         <div class="brand-copy">
           <strong>HeatSense AI</strong>
           <span>Heat risk monitoring prototype</span>
@@ -46,14 +49,14 @@
         <a href="#live-stations">Live Stations</a>
         <a href="#risk-map">Risk Map</a>
         <a href="#alerts">Advisories</a>
-        <a href="#analytics">Analytics</a>
+          <a href="#analytics">Analytics</a>
           <a href="#case-study">Case Study</a>
         <a href="#admin-users">Admin</a>
       </nav>
 
       <div class="nav-actions">
         <div class="status-pill"><span class="status-dot"></span>System Online</div>
-        <button class="icon-btn" aria-label="View notifications">🔔</button>
+        <button class="icon-btn" id="notificationButton" type="button" title="Go to heat alerts" aria-label="Go to heat alerts">🔔</button>
         <button class="profile-badge" id="logoutButton" type="button" aria-label="Sign out">SM</button>
       </div>
     </header>
@@ -84,33 +87,6 @@
               <div class="map-node node-4" title="Ahmedabad Sector 47.0°C"></div>
             </div>
           </div>
-        </div>
-      </section>
-
-      <section class="case-study-section section-block" id="case-study">
-        <div class="section-header case-study-heading">
-          <div>
-            <p class="eyebrow">Case Study Builder</p>
-            <h2>Turn the dashboard into a clear, printable study.</h2>
-            <p>Choose a topic and research question. The report uses the data currently shown and identifies demonstration data clearly.</p>
-          </div>
-          <button class="button button-secondary" id="printCaseStudy" type="button" title="Print or save the case study as a PDF" aria-label="Print or save case study as PDF">Print / Save PDF</button>
-        </div>
-        <div class="case-study-grid">
-          <form class="case-study-form" id="caseStudyForm">
-            <label for="caseStudyTitle">Case study title</label>
-            <input id="caseStudyTitle" value="Heatwave early warning and community preparedness" required />
-            <label for="caseStudyRegion">Study area</label>
-            <input id="caseStudyRegion" value="Pune, Maharashtra" required />
-            <label for="caseStudyQuestion">Research question</label>
-            <textarea id="caseStudyQuestion" rows="3" required>How can local heat monitoring support earlier, more useful heat-safety actions?</textarea>
-            <button class="button button-primary" type="submit">Build case study</button>
-          </form>
-          <article class="case-study-report" id="caseStudyReport" aria-live="polite">
-            <p class="report-kicker">READY TO BUILD</p>
-            <h3>Your case study will appear here</h3>
-            <p>Enter your topic and research question, then build a concise report with evidence, response actions, and limitations.</p>
-          </article>
         </div>
       </section>
 
@@ -324,6 +300,33 @@
         <div class="alert-list" id="alertList"></div>
       </section>
 
+      <section class="case-study-section section-block" id="case-study">
+        <div class="section-header case-study-heading">
+          <div>
+            <p class="eyebrow">Case Study Builder</p>
+            <h2>Turn the dashboard into a clear, printable study.</h2>
+            <p>Choose a topic and research question. The report uses the data currently shown and identifies demonstration data clearly.</p>
+          </div>
+          <button class="button button-secondary" id="printCaseStudy" type="button" title="Print or save the case study as a PDF" aria-label="Print or save case study as PDF">Print / Save PDF</button>
+        </div>
+        <div class="case-study-grid">
+          <form class="case-study-form" id="caseStudyForm">
+            <label for="caseStudyTitle">Case study title</label>
+            <input id="caseStudyTitle" value="Heatwave early warning and community preparedness" required />
+            <label for="caseStudyRegion">Study area</label>
+            <input id="caseStudyRegion" value="Pune, Maharashtra" required />
+            <label for="caseStudyQuestion">Research question</label>
+            <textarea id="caseStudyQuestion" rows="3" required>How can local heat monitoring support earlier, more useful heat-safety actions?</textarea>
+            <button class="button button-primary" type="submit">Build case study</button>
+          </form>
+          <article class="case-study-report" id="caseStudyReport" aria-live="polite">
+            <p class="report-kicker">READY TO BUILD</p>
+            <h3>Your case study will appear here</h3>
+            <p>Enter your topic and research question, then build a concise report with evidence, response actions, and limitations.</p>
+          </article>
+        </div>
+      </section>
+
       <section class="advisory-section section-block" id="advisory">
         <div class="section-header">
           <p class="eyebrow">Rule-Based Advisory</p>
@@ -522,7 +525,7 @@
         <strong>HeatSense AI</strong>
         <span>Climate Intelligence & Heatwave Early Warning Platform</span>
       </div>
-      <div>Designed & Developed by <strong>Sammeet Mistry</strong></div>
+      <div>Designed &amp; Developed by <strong>Sammeet Mistry</strong> &amp; <strong>Shravan Thakker</strong></div>
     </footer>
   </div>
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>

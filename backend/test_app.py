@@ -106,3 +106,22 @@ def test_normal_risk_advisory_includes_precautions():
     assert response.status_code == 200
     assert 'below the dashboard heat-alert thresholds' in response.get_json()['risk_description']
     assert 'Continue routine hydration' in response.get_json()['precautions']
+
+
+def test_admin_roster_has_requested_admins_and_preserves_placeholders():
+    client = app_module.app.test_client()
+    client.post('/api/auth/login', json={
+        'email': app_module.AUTH_EMAIL,
+        'password': app_module.AUTH_PASSWORD,
+    })
+
+    response = client.get('/api/admin/users')
+    data = response.get_json()
+    users_by_name = {user['name']: user for user in data['users']}
+
+    assert response.status_code == 200
+    assert 'Swarup Valvi' not in users_by_name
+    assert users_by_name['Sammeet Mistry']['role'] == 'Administrator'
+    assert users_by_name['Shravan Thakker']['role'] == 'Administrator'
+    assert {'Anita Rao', 'Rohan Desai', 'Asha Kulkarni', 'Vikram Singh'} <= users_by_name.keys()
+    assert data['counts']['total'] == 6
